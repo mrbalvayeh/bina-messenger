@@ -1,0 +1,34 @@
+# Build files
+build/
+*.o
+*.obj
+*.exe
+*.out
+*.a
+*.so
+*.dll
+*.dylib
+*.pyc
+
+# Qt
+*.pro.user
+*.qmake.stash
+*.qmake.cache
+*.moc
+*.rcc
+*.autosave
+Makefile*
+CMakeFiles/
+CMakeCache.txt
+*.user
+
+# Logs
+*.log
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
