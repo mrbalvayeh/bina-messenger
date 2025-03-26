@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/qt/qml/Bina">
+    <file alias="qmldir">/home/dev/Bina/cmake-build-debug/Bina/qmldir</file>
+  </qresource>
+</RCC>
+

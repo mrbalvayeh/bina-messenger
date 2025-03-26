@@ -1,0 +1,6 @@
+module Bina
+typeinfo appBina.qmltypes
+prefer :/qt/qml/Bina/
+Main 1.0 src/qml/Main.qml
+Login 1.0 src/qml/Login.qml
+

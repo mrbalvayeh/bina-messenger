@@ -1,0 +1,169 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-0c805a296a6ae2e087e9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "Bina",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "all_qmllint::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-all_qmllint-Debug-e828aaa52473177a6be9.json",
+					"name" : "all_qmllint",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "all_qmllint_json::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-all_qmllint_json-Debug-6f410afb024f7e0b19fc.json",
+					"name" : "all_qmllint_json",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "all_qmllint_module::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-all_qmllint_module-Debug-6ec014c42022c95573e0.json",
+					"name" : "all_qmllint_module",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "all_qmltyperegistrations::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-all_qmltyperegistrations-Debug-75928c34d983d937177d.json",
+					"name" : "all_qmltyperegistrations",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "appBina::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-appBina-Debug-a5d4631489976f5e2670.json",
+					"name" : "appBina",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "appBina_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-appBina_autogen-Debug-22bfb440ece2d662ada2.json",
+					"name" : "appBina_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "appBina_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-appBina_autogen_timestamp_deps-Debug-92cf32379f9624d311ef.json",
+					"name" : "appBina_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "appBina_qmlimportscan::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-appBina_qmlimportscan-Debug-246a1f00afbffda1a009.json",
+					"name" : "appBina_qmlimportscan",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "appBina_qmllint::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-appBina_qmllint-Debug-c6a95ea15b9c17a9840c.json",
+					"name" : "appBina_qmllint",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "appBina_qmllint_json::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-appBina_qmllint_json-Debug-cca961fc724e9e334e8d.json",
+					"name" : "appBina_qmllint_json",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "appBina_qmllint_module::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-appBina_qmllint_module-Debug-5b9b19003e4c69314cc2.json",
+					"name" : "appBina_qmllint_module",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "appBina_qmltyperegistration::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-appBina_qmltyperegistration-Debug-40e8b6015955f593c935.json",
+					"name" : "appBina_qmltyperegistration",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "appBina_tooling::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-appBina_tooling-Debug-ca94226362da2ffe0854.json",
+					"name" : "appBina_tooling",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/dev/Bina/cmake-build-debug",
+		"source" : "/home/dev/Bina"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

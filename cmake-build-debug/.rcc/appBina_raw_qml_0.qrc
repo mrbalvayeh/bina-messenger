@@ -1,0 +1,8 @@
+<RCC>
+  <qresource prefix="/qt/qml/Bina/">
+    <file alias="src/qml/Main.qml">/home/dev/Bina/src/qml/Main.qml</file>
+    <file alias="src/qml/Login.qml">/home/dev/Bina/src/qml/Login.qml</file>
+    <file alias="resource/resources.qrc">/home/dev/Bina/resource/resources.qrc</file>
+  </qresource>
+</RCC>
+
