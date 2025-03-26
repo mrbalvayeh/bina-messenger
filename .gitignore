@@ -32,3 +32,8 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+
+
+#build stuff
+cmake-build-debug/
+cmake-build-release/
