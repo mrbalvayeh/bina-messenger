@@ -1,7 +1,0 @@
-<RCC>
-  <!-- The prefix decides how your resource URL will look in QML -->
-  <qresource prefix="/images">
-    <!-- This path must match your on-disk location relative to the .qrc file -->
-    <file>images/logo.jpg</file>
-  </qresource>
-</RCC>
