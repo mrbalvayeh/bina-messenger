@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="/">
-    <file alias="/qt/qml/Bina">/home/dev/Bina/cmake-build-debug/Bina</file>
-
-  </qresource>
-</RCC>
