@@ -2,8 +2,24 @@
   <qresource prefix="/">
   <file>../qml/Main.qml</file>
   <file>../qml/Login.qml</file>
+  <file>../qml/Admin.qml</file>
   </qresource>
   <qresource prefix="/images">
     <file>images/logo.jpg</file>
+  </qresource>
+  <qresource prefix="/images">
+    <file>images/Bina_Logo.png</file>
+  </qresource>
+  <qresource prefix="/images">
+    <file>images/edit_icon.png</file>
+  </qresource>
+  <qresource prefix="/images">
+    <file>images/delete_icon.png</file>
+  </qresource>
+  <qresource prefix="/images">
+    <file>images/save_icon.png</file>
+  </qresource>
+  <qresource prefix="/images">
+    <file>images/Bina_Logo_rad.png</file>
   </qresource>
 </RCC>
