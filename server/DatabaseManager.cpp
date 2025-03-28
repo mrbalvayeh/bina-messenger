@@ -1,261 +1,287 @@
 #include "DatabaseManager.h"
 #include <QSqlQuery>
 #include <QSqlError>
-#include <QSqlDatabase>
+#include <QVariant>
 #include <QDebug>
-#include <QProcess>
 
 DatabaseManager::DatabaseManager(QObject *parent)
-    : QObject{parent}
+        : QObject(parent)
 {
-    // Initialize the PostgreSQL connection
-    // Make sure Qt has PostgreSQL driver: "QPSQL"
-    db_ = QSqlDatabase::addDatabase("QPSQL");
-    db_.setHostName("127.0.0.1");
-    db_.setPort(5432);
-    db_.setDatabaseName("your_db_name");
-    db_.setUserName("postgres");
-    db_.setPassword("secret");
+    // Optionally open connection right away
+    openConnection();
+}
 
-    if (!db_.open()) {
-        qWarning() << "Failed to connect to database:" << db_.lastError().text();
-    } else {
-        qDebug() << "Connected to PostgreSQL successfully!";
+DatabaseManager::~DatabaseManager()
+{
+    if (m_db.isOpen()) {
+        m_db.close();
     }
 }
-bool DatabaseManager::initializeDB() {
-    // 1) Ensure Postgres is running
-    if (!ensurePostgresRunning()) {
-        qWarning() << "Could not start/find PostgreSQL service.";
+bool DatabaseManager::ensurePostgresRunning()
+{
+    int exitCode = std::system("pg_isready > /dev/null 2>&1");
+    if (exitCode == 0) {
+        return true; // already running
+    }
+
+    qInfo() << "PostgreSQL not running. Attempting to start it...";
+    int startCode = std::system("sudo systemctl start postgresql");
+    return (startCode == 0);
+}
+bool DatabaseManager::ensureDatabaseExists()
+{
+    QSqlDatabase checkDb = QSqlDatabase::addDatabase("QPSQL", "postgres_connection");
+    checkDb.setHostName(m_host);
+    checkDb.setPort(m_port);
+    checkDb.setDatabaseName("postgres"); // connect to default db
+    checkDb.setUserName(m_user);
+    checkDb.setPassword(m_password);
+
+    if (!checkDb.open()) {
+        qWarning() << "Failed to connect to 'postgres' DB:" << checkDb.lastError().text();
         return false;
     }
 
-    // 2) Create DB if missing
-    if (!createDatabaseIfNotExists()) {
-        qWarning() << "Failed to create/connect to database:" << m_mainDBName;
+    QSqlQuery checkQuery(checkDb);
+    checkQuery.prepare("SELECT 1 FROM pg_database WHERE datname = :dbname");
+    checkQuery.bindValue(":dbname", m_dbName);
+    if (!checkQuery.exec()) {
+        qWarning() << "DB existence check failed:" << checkQuery.lastError().text();
         return false;
     }
 
-    // 3) Create or update schema (tables, admin user, etc.)
-    if (!setupSchema()) {
-        qWarning() << "Failed to setup schema for database:" << m_mainDBName;
-        return false;
+    if (checkQuery.next()) {
+        return true; // DB already exists
     }
 
-    // 4) (Optional) Now open a QSqlDatabase connection for day-to-day queries
-    //    e.g. addDatabase("QPSQL", "app_connection") ... connect to bina_messenger ...
-    //    Then your authenticate() method can reuse that connection.
+    qInfo() << "Database" << m_dbName << "does not exist. Creating it...";
+
+    QSqlQuery createQuery(checkDb);
+    if (!createQuery.exec(QString("CREATE DATABASE %1").arg(m_dbName))) {
+        qWarning() << "Failed to create database:" << createQuery.lastError().text();
+        return false;
+    }
 
     return true;
 }
-bool DatabaseManager::ensurePostgresRunning() {
-    // Quick test: connect to default "postgres" DB.
-    {
-        QSqlDatabase testDb = QSqlDatabase::addDatabase("QPSQL", "test_connection");
-        testDb.setHostName(m_host);
-        testDb.setPort(m_port);
-        testDb.setDatabaseName("postgres");
-        testDb.setUserName(m_adminUser);
-        testDb.setPassword(m_adminPass);
 
-        if (testDb.open()) {
-            qDebug() << "Postgres is already running.";
-            testDb.close();
-            QSqlDatabase::removeDatabase("test_connection");
-            return true;
-        }
-        testDb.close();
-        QSqlDatabase::removeDatabase("test_connection");
-    }
-
-    // Not running, let's attempt to start it (requires sudo privileges)
-    qDebug() << "Attempting to start Postgres service via systemctl...";
-    QProcess process;
-    process.start("sudo", QStringList() << "systemctl" << "start" << "postgresql");
-    process.waitForFinished(5000);
-
-    // Retest
-    {
-        QSqlDatabase testDb = QSqlDatabase::addDatabase("QPSQL", "test_connection2");
-        testDb.setHostName(m_host);
-        testDb.setPort(m_port);
-        testDb.setDatabaseName("postgres");
-        testDb.setUserName(m_adminUser);
-        testDb.setPassword(m_adminPass);
-
-        if (testDb.open()) {
-            qDebug() << "Successfully started Postgres service.";
-            testDb.close();
-            QSqlDatabase::removeDatabase("test_connection2");
-            return true;
-        }
-        qWarning() << "Still cannot connect after starting service:" << testDb.lastError().text();
-        testDb.close();
-        QSqlDatabase::removeDatabase("test_connection2");
-    }
-
-    return false;
-}
-bool DatabaseManager::createDatabaseIfNotExists() {
-    // 1) Check if bina_messenger DB is present
-    QString sqlCheck = QString("SELECT 1 FROM pg_database WHERE datname='%1';")
-            .arg(m_mainDBName);
-
-    QString errorMsg;
-    if (!execSql("postgres", sqlCheck, &errorMsg)) {
-        qWarning() << "Error checking database existence:" << errorMsg;
+bool DatabaseManager::initializeDB()
+{
+    if (!ensurePostgresRunning()) {
+        qWarning() << "PostgreSQL service not running and couldn't start it.";
         return false;
     }
 
-    // 2) Evaluate the query result
+    if (!ensureDatabaseExists()) {
+        qWarning() << "Failed to create/check target database.";
+        return false;
+    }
+
+    if (!openConnection()) {
+        qWarning() << "Failed to open PostgreSQL connection.";
+        return false;
+    }
+
+    return setupSchema();
+}
+
+bool DatabaseManager::openConnection()
+{
+    if (m_db.isOpen()) {
+        return true; // already open
+    }
+
+    // Using default connection name "app_connection" or choose your own
+    if (!QSqlDatabase::contains("app_connection")) {
+        m_db = QSqlDatabase::addDatabase("QPSQL", "app_connection");
+    } else {
+        m_db = QSqlDatabase::database("app_connection");
+    }
+
+    m_db.setHostName(m_host);
+    m_db.setPort(m_port);
+    m_db.setDatabaseName(m_dbName);
+    m_db.setUserName(m_user);
+    m_db.setPassword(m_password);
+
+    if (!m_db.open()) {
+        qWarning() << "Unable to open DB:" << m_db.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+bool DatabaseManager::setupSchema()
+{
+    QSqlQuery query(m_db);
+    // 1) Create table if missing
+    QString createUsers = R"(
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            is_admin BOOLEAN NOT NULL DEFAULT false
+        )
+    )";
+    if (!query.exec(createUsers)) {
+        qWarning() << "Failed to create 'users' table:"
+                   << query.lastError().text();
+        return false;
+    }
+
+    // 2) Ensure at least one admin if needed
+    //    (Optional) e.g. insert default admin user
+    QString insertAdmin = R"(
+        INSERT INTO users (username, password, is_admin)
+        VALUES ('admin', 'admin', true)
+        ON CONFLICT (username) DO NOTHING
+    )";
+    if (!query.exec(insertAdmin)) {
+        qWarning() << "Failed to ensure admin user:" << query.lastError().text();
+        return false;
+    }
+
+    return true;
+}
+
+bool DatabaseManager::createUser(const QString &username, const QString &password, bool isAdmin)
+{
+    if (!m_db.isOpen()) {
+        qWarning() << "DB not open in createUser!";
+        return false;
+    }
+    // Check 5-user limit
     {
-        QSqlDatabase db = QSqlDatabase::database("postgres_temp");
-        QSqlQuery query(db);
-        if (!query.exec(sqlCheck)) {
-            qWarning() << "Failed to check db existence:" << query.lastError().text();
+        QSqlQuery countQuery(m_db);
+        if (!countQuery.exec("SELECT COUNT(*) FROM users")) {
+            qWarning() << "Failed to count users:" << countQuery.lastError().text();
             return false;
         }
-        if (!query.next()) {
-            // No row => DB doesn't exist => create it
-            QString createSql = QString("CREATE DATABASE %1;").arg(m_mainDBName);
-            if (!execSql("postgres", createSql, &errorMsg)) {
-                qWarning() << "Failed to create DB:" << errorMsg;
+        if (countQuery.next()) {
+            int userCount = countQuery.value(0).toInt();
+            if (userCount >= 5) {
+                qWarning() << "User limit (5) reached. Cannot create new user.";
                 return false;
             }
-            qDebug() << "Database" << m_mainDBName << "created successfully.";
-        } else {
-            qDebug() << "Database" << m_mainDBName << "already exists.";
         }
     }
 
-    return true;
-}
-bool DatabaseManager::setupSchema() {
-    // 1) Check if 'users' table exists
-    QString checkTableSql = R"(
-        SELECT 1
-        FROM information_schema.tables
-        WHERE table_schema='public'
-          AND table_name='users';
-    )";
-
-    QString errorMsg;
-    if (!execSql(m_mainDBName, checkTableSql, &errorMsg)) {
-        qWarning() << "Error checking users table existence:" << errorMsg;
-        return false;
-    }
-
-    QSqlDatabase db = QSqlDatabase::database(m_mainDBName + "_temp");
-    QSqlQuery query(db);
-    if (!query.exec(checkTableSql)) {
-        qWarning() << "Error retrieving table existence:" << query.lastError().text();
-        return false;
-    }
-
-    bool usersTableExists = query.next();
-
-    // 2) If missing, create it
-    if (!usersTableExists) {
-        QString createSql = R"(
-            CREATE TABLE users (
-                id SERIAL PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                is_admin BOOLEAN NOT NULL DEFAULT false
-            );
-        )";
-        if (!execSql(m_mainDBName, createSql, &errorMsg)) {
-            qWarning() << "Failed to create users table:" << errorMsg;
-            return false;
-        }
-        qDebug() << "'users' table created.";
-    }
-
-    // 3) Insert an admin user if not present
-    //    crypt(...) assumes you have the pgcrypto extension. Otherwise store hashed passwords in another way.
-    QString insertAdminSql = R"(
+    // Insert new user
+    QSqlQuery query(m_db);
+    query.prepare(R"(
         INSERT INTO users (username, password, is_admin)
-        VALUES ('admin', crypt('adminpass', gen_salt('bf')), true)
-        ON CONFLICT (username) DO NOTHING;
-    )";
-    if (!execSql(m_mainDBName, insertAdminSql, &errorMsg)) {
-        qWarning() << "Failed to insert admin user:" << errorMsg;
+        VALUES (:user, :pass, :admin)
+        ON CONFLICT (username) DO NOTHING
+    )");
+    query.bindValue(":user", username);
+    query.bindValue(":pass", password);    // For real usage, store hashed
+    query.bindValue(":admin", isAdmin);
+
+    if (!query.exec()) {
+        qWarning() << "Insert user failed:" << query.lastError().text();
         return false;
     }
-    qDebug() << "Admin user ensured.";
-
+    if (query.numRowsAffected() < 1) {
+        qWarning() << "No user inserted (duplicate username?).";
+        return false;
+    }
     return true;
 }
-bool DatabaseManager::execSql(const QString &dbName, const QString &sql, QString *errorOut)
+
+QVariantList DatabaseManager::getAllUsers()
 {
-    // Unique connection name
-    QString connName = dbName + "_temp";
-    if (QSqlDatabase::contains(connName)) {
-        QSqlDatabase::removeDatabase(connName);
+    QVariantList result;
+    if (!m_db.isOpen()) {
+        qWarning() << "DB not open in getAllUsers!";
+        return result;
     }
 
-    // Add & open
-    QSqlDatabase db = QSqlDatabase::addDatabase("QPSQL", connName);
-    db.setHostName(m_host);
-    db.setPort(m_port);
-    db.setDatabaseName(dbName);
-    db.setUserName(m_adminUser);
-    db.setPassword(m_adminPass);
+    QSqlQuery query(m_db);
+    if (!query.exec("SELECT username, is_admin FROM users ORDER BY id ASC")) {
+        qWarning() << "Failed to select from users:" << query.lastError().text();
+        return result;
+    }
 
-    if (!db.open()) {
-        if (errorOut)
-            *errorOut = db.lastError().text();
-        db.close();
+    while (query.next()) {
+        QVariantMap map;
+        map["username"] = query.value(0).toString();
+        map["is_admin"] = query.value(1).toBool();
+        result.append(map);
+    }
+    return result;
+}
+
+bool DatabaseManager::updateUser(const QString &oldUsername, const QString &newUsername, const QString &newPassword)
+{
+    if (!m_db.isOpen()) {
+        qWarning() << "DB not open in updateUser!";
         return false;
     }
 
-    // Exec
-    QSqlQuery query(db);
-    if (!query.exec(sql)) {
-        if (errorOut)
-            *errorOut = query.lastError().text();
-        db.close();
+    QSqlQuery query(m_db);
+    query.prepare(R"(
+        UPDATE users
+        SET username = :newUser,
+            password = :newPass
+        WHERE username = :oldUser
+    )");
+    query.bindValue(":newUser", newUsername);
+    query.bindValue(":newPass", newPassword); // again, should be hashed
+    query.bindValue(":oldUser", oldUsername);
+
+    if (!query.exec()) {
+        qWarning() << "Failed to update user:" << query.lastError().text();
         return false;
     }
-
-    // Done
+    if (query.numRowsAffected() < 1) {
+        qWarning() << "No user updated. Possibly oldUsername not found.";
+        return false;
+    }
     return true;
 }
 
+bool DatabaseManager::deleteUser(const QString &username)
+{
+    if (!m_db.isOpen()) {
+        qWarning() << "DB not open in deleteUser!";
+        return false;
+    }
 
+    QSqlQuery query(m_db);
+    query.prepare("DELETE FROM users WHERE username = :u");
+    query.bindValue(":u", username);
 
-// This method is exposed to QML via Q_INVOKABLE
+    if (!query.exec()) {
+        qWarning() << "Failed to delete user:" << query.lastError().text();
+        return false;
+    }
+    return (query.numRowsAffected() > 0);
+}
+
 bool DatabaseManager::authenticate(const QString &username, const QString &password)
 {
-    // For day-to-day app usage, connect to bina_messenger with a normal user
-    // or keep using the same admin credentials if you like (not recommended in production)
-
-    QSqlDatabase db = QSqlDatabase::database("app_connection");
-    if (!db.isOpen()) {
-        // Or open it here, or handle an error
-        qWarning() << "DB not open in authenticate()!";
+    if (!m_db.isOpen()) {
+        qWarning() << "DB not open in authenticate!";
         return false;
     }
 
-    QSqlQuery query(db);
+    QSqlQuery query(m_db);
+    // For real usage, store hashed passwords, compare hashed input with stored hash
     query.prepare(R"(
         SELECT COUNT(*)
         FROM users
         WHERE username = :user
-          AND password = crypt(:pass, password)
+          AND password = :pass
     )");
     query.bindValue(":user", username);
     query.bindValue(":pass", password);
 
     if (!query.exec()) {
-        qWarning() << "Auth query error:" << query.lastError().text();
+        qWarning() << "Auth query failed:" << query.lastError().text();
         return false;
     }
-
     if (query.next()) {
-        int count = query.value(0).toInt();
-        return (count == 1);
+        return (query.value(0).toInt() == 1);
     }
-
     return false;
 }
