@@ -5,6 +5,7 @@ Rectangle {
     id: root
     // width: 400
     // height: 550
+    signal loginSuccess()
 
     // A light-to-dark blue gradient background
     gradient: Gradient {
@@ -39,11 +40,12 @@ Rectangle {
 
         Image {
             id: logoImage
-            source: "qrc:/images/images/logo.jpg"   // Place your logo file or resources path
+            source: "qrc:/images/images/Bina_Logo_rad.png"   // Place your logo file or resources path
             fillMode: Image.PreserveAspectFit
             // anchors.horizontalCenter: parent.horizontalCenter
-            width: 300
-            height: 100
+            width: 500
+            height: 200
+            opacity: 0.8
             // width: parent.width * 0.4
             // height: parent.width * 0.4
         }
@@ -114,12 +116,22 @@ Rectangle {
 
                         // Example of QML->C++ call:
                         onClicked: {
-                            if (dbManager.authenticate(usernameField.text, passwordField.text)) {
+                            var authResult = clientAPI.authenticate(usernameField.text, passwordField.text)
+
+                            console.log("Login result:", authResult)
+                            console.log("Is admin:", authResult.isAdmin)
+                            if (authResult.success) {
                                 statusLabel.text = "Login Successful"
-                                // Transition to next screen
-                            } else {
-                                statusLabel.text = "Invalid credentials"
+
+                                if (authResult.isAdmin) {
+                                    loginSuccess() // ✅ Trigger it here
+                                }
                             }
+                            if (!authResult.success) {
+                                statusLabel.text = authResult.error || "Invalid credentials"
+                                return
+                            }
+
                         }
                     }
                     Button
