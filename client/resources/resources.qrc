@@ -20,6 +20,9 @@
     <file>images/save_icon.png</file>
   </qresource>
   <qresource prefix="/images">
+    <file>images/adduser_icon.png</file>
+  </qresource>
+  <qresource prefix="/images">
     <file>images/Bina_Logo_rad.png</file>
   </qresource>
 </RCC>
