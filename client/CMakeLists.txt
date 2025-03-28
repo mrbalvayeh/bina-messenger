@@ -13,10 +13,20 @@ add_executable(client
         main.cpp
         network/ClientAPI.cpp
         resources/resources.qrc
+        qml/Admin.qml
 )
 
 target_include_directories(client PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
-
-target_link_libraries(client PRIVATE Qt6::Core Qt6::Quick Qt6::Gui Qt6::Qml)
+# Include shared proto directory
+target_include_directories(client PRIVATE ${CMAKE_SOURCE_DIR}/shared)
+# Link dependencies
+target_link_libraries(client
+        proto_messages
+        ${Protobuf_LIBRARIES}
+        ${ZeroMQ_LIBRARIES}
+        Qt6::Core
+        Qt6::Quick
+        Qt6::Qml
+)
